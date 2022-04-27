@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java EE with AJAX</title>
+    <link rel="stylesheet" href="assets/css/normalize.css">
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+</head>
+<body>
+
+<section class="ms-3">
+    <div class="row mt-3">
+        <div class="col-4">
+            <form id="customer_form"> 
+                <div class="mb-3">
+                    <label for="txtCusID">Customer ID</label>
+                    <input class="form-control" id="txtCusID" placeholder="Customer ID" type="text" name="customerID">
+                </div>
+                <div class="mb-3">
+                    <label for="txtCusName">Customer Name</label>
+                    <input class="form-control" id="txtCusName" placeholder="Customer Name" type="text" name="customerName">
+                </div>
+                <div class="mb-3">
+                    <label for="txtCusAddress">Customer Address</label>
+                    <input class="form-control" id="txtCusAddress" placeholder="Customer Address" type="text" name="customerAddress">
+                </div>
+                <div class="mb-3">
+                    <label for="txtCusSalary">Customer Salary</label>
+                    <input class="form-control" id="txtCusSalary" placeholder="Customer Salary" type="text" name="customerSalary">
+                </div>
+                <div class="mb-3">
+                    <button id="btnSaveCustomer" type="button" class=" btn btn-primary text-white fw-bolder">Save</button>
+                    <button id="btnUpdateCustomer" type="button" class=" btn btn-warning text-white fw-bolder">Update</button>
+                    <button id="btnDeleteCustomer" type="button" class=" btn btn-danger text-white fw-bolder">Delete</button>
+                    <button class="btn btn-success text-white" id="btn1">Get All</button>
+                </div>
+            </form>
+        </div>
+        <div class="col">
+            <table id="tblCustomer" class="table table-bordered table-hover">
+                <thead class="bg-secondary text-white">
+                    <tr>
+                        <th>Customer ID</th>
+                        <th>Name</th>
+                        <th>Address</th>
+                        <th>Salary</th>
+                    </tr>
+                </thead>
+                <tbody id="tblCustomer-body">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<script src="assets/js/jquery-3.6.0.min.js"></script>
+<script src="assets/bootstrap/js/bootstrap.min.js"></script>
+
+<script>
+
+    // var reply;
+    // var resTxt;
+
+    loadAllCustomers();
+
+    function clearFields() {
+        $("#txtCusID").val("");
+        $("#txtCusName").val("");
+        $("#txtCusAddress").val("");
+        ($("#txtCusSalary").val(""));
+    }
+
+    function loadAllCustomers() {
+        $("#tblCustomer tbody").empty();
+        $.ajax({
+            url:"customer",
+            method:"GET",
+            success: function(resp){
+                // reply=resp;
+                // console.log(resp); // [{data,message,status}]
+                // console.log(resp[0].data); // (8) [{…}, {…}, {…}, {…}, {…}, {…}, {…}, {…}]
+                // console.log(resp[0].data[0]); // {id: 'C00-001', name: 'Kamal', address: 'Galle', salary: 5000}
+                // console.log(resp[0].message); // "Done"
+                // console.log(resp[0].status); // 200
+
+                resp[0].data.forEach(customer => {
+                        let row = 
+                        `<tr>
+                                <td>${customer.id}</td>
+                                <td>${customer.name}</td>
+                                <td>${customer.address}</td>
+                                <td>${customer.salary}</td>
+                            </tr>`;
+                    
+                        $("#tblCustomer tbody").append(row);
+                    });
+                //alert("Message : "+resp[0].message+"\nStatus : "+resp[0].status);
+                selectRowOnClick();
+                clearFields();
+
+            },
+            error: function (ob, textStatus, error) {
+                resTxt = ob.responseText;
+                alert($(resTxt)[5].innerText);
+            }
+        });
+    }
+
+    $("#btn1").click(function (e) { 
+        loadAllCustomers();  
+    });
+
+
+    $("#btnSaveCustomer").click(function (e) { 
+        var formData = $("#customer_form").serialize();
+
+        var id = $("#txtCusID").val();
+        var name = $("#txtCusName").val();
+        var address = $("#txtCusAddress").val();
+        var salary = ($("#txtCusSalary").val());
+
+        $.ajax({
+            url:"customer",
+            method:"POST",
+            data:formData,
+            success:function(resp){
+                // reply = resp;
+                alert("Message : "+resp[0].message+"\nStatus : "+resp[0].status);
+                loadAllCustomers();
+            },
+            error: function (ob, textStatus, error) {
+                resTxt = ob.responseText;
+                alert($(resTxt)[5].innerText);
+            } 
+        });
+    });
+
+    $("#btnDeleteCustomer").click(function (e) { 
+        var cusID = $("#txtCusID").val();
+        
+        $.ajax({
+            url:"customer?CustID="+cusID, 
+            method:"DELETE",
+
+            success:function (resp) {
+                alert("Message : "+resp[0].message+"\nStatus : "+resp[0].status);
+                loadAllCustomers();
+            },
+            error: function (ob, textStatus, error) {
+                resTxt = ob.responseText;
+                alert($(resTxt)[5].innerText);
+            } 
+        });       
+    });
+
+    function selectRowOnClick() {  
+        $("#tblCustomer-body>tr").click(function (e) { 
+            let id = $(this).children(':nth-child(1)').text();
+            let name = $(this).children().eq(1).text();
+            let address = $(this).children(':nth-child(3)').text();
+            let salary = $(this).children().eq(3).text();   
+
+            $("#txtCusID").val(id);
+            $("#txtCusName").val(name);
+            $("#txtCusAddress").val(address);
+            $("#txtCusSalary").val(salary);
+        });
+    }
+
+    $("#btnUpdateCustomer").click(function (e) { 
+        var id = $("#txtCusID").val();
+        var name = $("#txtCusName").val();
+        var address = $("#txtCusAddress").val();
+        var salary = ($("#txtCusSalary").val());
+
+        // var jsonstring = JSON.stringify({
+        //     id: id,
+        //     name: name,
+        //     address: address,
+        //     salary: salary
+        // });
+
+        // console.log(jsonstring);
+
+        /**
+         * contetType - the type of data we're sending(default - x-www-fomr-urlencoded)
+         * dataType - the type of data that we're expecting back from the server.
+         * data - the data sending with the request
+        */
+
+        $.ajax({
+            url:"customer",
+            method:"PUT",
+            contentType:"application/json",
+
+            data: JSON.stringify({
+                customerID: id,
+                customerName: name,
+                customerAddress: address,
+                customerSalary: salary
+            }),
+
+            success:function(resp){
+                alert("Message : "+resp[0].message+"\nStatus : "+resp[0].status);
+                loadAllCustomers();
+            },
+            
+            error: function (ob, textStatus, error) {
+                resTxt = ob.responseText;
+                alert($(resTxt)[5].innerText);
+            } 
+        });
+    });
+
+</script>
+</body>
+</html>
